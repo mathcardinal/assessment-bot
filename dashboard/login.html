@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assessment Bot — Вход</title>
+<link rel="icon" type="image/png" sizes="any" href="data:image/png;base64,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">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Hallmark · macrostructure: single-card auth (flush-left) · pre-emit critique: P4 H4 E5 S4 R5 V5
+   · contrast: pass (40-41) · nav: n/a · footer: n/a · slop: pass (42-45)
+   · honest: pass (46) · chrome: pass (47) · tokens: pass (48, locked Assessment Bot set) · responsive: pass (49) · icons: pass (30)
+   · inputs: pass (39) · mobile: pass (34, 50-57) */
+
+:root{
+  --blue:#0068FF; --blue-dark:#114495; --blue-light:#E8F0FF;
+  --bg:#F5F5F5; --surface:#FFFFFF; --text:#1E1E1E; --text-muted:#6B7280;
+  --border:#E5E7EB; --green:#27AE60; --red:#E74C3C;
+  --radius:12px; --shadow:0 1px 3px rgba(0,0,0,0.08);
+  --shadow-card:0 18px 44px -20px rgba(17,68,149,0.28), 0 2px 6px rgba(17,68,149,0.06);
+  --field-h:46px;
+}
+
+*{box-sizing:border-box;}
+html,body{overflow-x:clip;}
+html{-webkit-text-size-adjust:100%;}
+
+body{
+  margin:0;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:18px;
+  padding:32px 20px;
+  font-family:'Montserrat','Helvetica Neue',Arial,sans-serif;
+  font-size:14px;
+  line-height:1.5;
+  color:var(--text);
+  background:var(--bg);
+}
+
+.card{
+  width:100%;
+  max-width:408px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow-card);
+  padding:38px 36px 34px;
+  animation:rise 320ms ease both;
+}
+
+@keyframes rise{
+  from{opacity:0;transform:translateY(10px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+.brand{
+  font-size:22px;
+  font-weight:700;
+  letter-spacing:-0.02em;
+  line-height:1;
+  color:var(--blue-dark);
+  margin-bottom:26px;
+}
+.brand span{color:var(--blue);}
+
+.title{
+  font-size:20px;
+  font-weight:600;
+  line-height:1.25;
+  letter-spacing:-0.01em;
+  margin:0 0 6px;
+  overflow-wrap:anywhere;
+  min-width:0;
+}
+.subtitle{
+  margin:0 0 24px;
+  color:var(--text-muted);
+  font-size:14px;
+}
+
+#err{
+  display:none;
+  align-items:flex-start;
+  gap:8px;
+  margin-bottom:18px;
+  padding:10px 12px;
+  border:1px solid #F3C6C1;
+  border-radius:8px;
+  background:#FDECEA;
+  color:#B23A2E;
+  font-size:13px;
+  line-height:1.4;
+}
+#err svg{flex:none;margin-top:1px;}
+
+form{display:flex;flex-direction:column;gap:16px;}
+
+.field{display:flex;flex-direction:column;gap:7px;}
+.field label{
+  font-size:13px;
+  font-weight:600;
+  color:var(--text);
+}
+.field input{
+  height:var(--field-h);
+  width:100%;
+  padding:0 14px;
+  font-family:inherit;
+  font-size:15px;
+  color:var(--text);
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  outline:2px solid transparent;
+  outline-offset:1px;
+  transition:border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+.field input::placeholder{color:#9AA1AC;}
+.field input:hover{border-color:#CDD3DC;}
+.field input:focus{
+  border-color:var(--blue);
+  box-shadow:0 0 0 3px var(--blue-light);
+  outline:none;
+}
+.field input:focus-visible{
+  border-color:var(--blue);
+  box-shadow:0 0 0 3px var(--blue-light);
+  outline:none;
+}
+
+.btn{
+  margin-top:6px;
+  height:var(--field-h);
+  width:100%;
+  border:1px solid transparent;
+  border-radius:8px;
+  background:var(--blue);
+  color:#FFFFFF;
+  font-family:inherit;
+  font-size:15px;
+  font-weight:600;
+  letter-spacing:0.01em;
+  cursor:pointer;
+  transition:background-color 160ms ease, transform 120ms ease;
+}
+.btn:hover{background:var(--blue-dark);}
+.btn:focus-visible{outline:2px solid var(--blue-dark);outline-offset:2px;}
+.btn:active{transform:translateY(1px);background:var(--blue-dark);}
+.btn:disabled{opacity:0.55;cursor:not-allowed;background:var(--blue);}
+
+.footnote{
+  margin:0;
+  max-width:408px;
+  text-align:center;
+  color:var(--text-muted);
+  font-size:12px;
+  line-height:1.5;
+}
+
+@media (max-width:420px){
+  .card{padding:30px 22px 28px;}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .card{animation:none;}
+  .field input,.btn{transition:none;}
+}
+</style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand">Tutor<span>Dog</span></div>
+    <h1 class="title">Вход в аналитику</h1>
+    <p class="subtitle">Срезы знаний по сотрудникам Assessment Bot.</p>
+
+    <div id="err" role="alert">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="8" cy="8" r="7" stroke="#B23A2E" stroke-width="1.4"/>
+        <path d="M8 4.6v4.2M8 11.1h.01" stroke="#B23A2E" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+      <span>Неверный логин или пароль</span>
+    </div>
+
+    <form method="post" action="/login">
+      <div class="field">
+        <label for="username">Логин</label>
+        <input id="username" name="username" type="text" autocomplete="username" autofocus>
+      </div>
+      <div class="field">
+        <label for="password">Пароль</label>
+        <input id="password" name="password" type="password" autocomplete="current-password">
+      </div>
+      <button class="btn" type="submit">Войти</button>
+    </form>
+  </main>
+
+  <p class="footnote">Внутренний инструмент {{COMPANY_NAME}} · доступ только для сотрудников</p>
+
+  <script>
+    if (location.search.indexOf('error') !== -1) {
+      document.getElementById('err').style.display = 'flex';
+    }
+  </script>
+</body>
+</html>
