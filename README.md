@@ -1,58 +1,58 @@
-# Assessment Bot & Admin Dashboard
+# Бот аттестации и админ-дашборд
 
-A monthly certification system for 200 employees: a corporate-messenger bot runs assessments in parallel across all teams, with a FastAPI admin dashboard for managing tests, roles, and results.
+Система ежемесячной аттестации для 200 сотрудников: бот в корпоративном мессенджере проводит аттестацию параллельно во всех командах, дашборд на FastAPI управляет тестами, ролями и результатами.
 
-Built solo. Replaced a manual process where assessments ran twice a year and each cycle occupied three trainers for two months at ~80% of their workload. Now: monthly certification with near-zero trainer involvement, a 6x increase in assessment frequency. About 860K RUB a year saved (10 person-months of manual work).
+Собрал один. Заменил ручной процесс, при котором аттестация шла два раза в год и каждый цикл занимал трёх тренеров на два месяца при загрузке около 80%. Теперь аттестация ежемесячная и почти без участия тренеров, частота выросла в 6 раз. Экономия около 860 тыс. ₽ в год (10 человеко-месяцев ручной работы).
 
-![Analytics dashboard](screenshots/dashboard.png)
-![Bot dialog](screenshots/bot_dialog.png)
+![Дашборд аналитики](screenshots/dashboard.png)
+![Диалог бота](screenshots/bot_dialog.png)
 
-## Why this exists
+## Зачем это
 
-Certification used to be a live, one-on-one process: 30-45 minutes per employee with a trainer present. At 200 employees, a full cycle physically required months of calendar time and most of three trainers' capacity, so it ran only twice a year, and skill gaps stayed invisible for six months at a time.
+Аттестация была живым процессом один на один: 30–45 минут на сотрудника в присутствии тренера. На 200 сотрудниках полный цикл физически занимал месяцы календарного времени и бóльшую часть ёмкости трёх тренеров, поэтому проводился дважды в год, а пробелы в знаниях оставались невидимыми по полгода.
 
-The bottleneck wasn't test content. It was seriality: one trainer, one employee, one time slot. The fix was to make assessment parallel and self-serve, the bot delivers tests to everyone simultaneously, enforces timing and retry rules, collects results centrally, and the dashboard gives trainers and team leads a live view instead of manual spreadsheets.
+Узким местом было не содержание тестов, а последовательность: один тренер, один сотрудник, один слот времени. Решение — сделать аттестацию параллельной и самостоятельной. Бот раздаёт тесты всем одновременно, следит за таймингом и правилами пересдачи, собирает результаты централизованно, а дашборд даёт тренерам и руководителям живую картину вместо ручных таблиц.
 
-## What's in this repo
+## Что в репозитории
 
 ```
-n8n/            4 production workflows (JSON exports) + extracted node logic
-  wf1_*.json      test distribution
-  wf2_*.json      answer processing
-  wf3_*.json      reminders
-  wf4_*.json      retry / second attempt
-  *.js            Code-node logic extracted into standalone modules
-  *.test.js       unit tests for that logic
-dashboard/      FastAPI app: main.py, access.py (role-based auth), UI
-tests/          Python tests: auth, scopes, access cache
-tools/          resume_stuck.py, recovery utility for interrupted assessments
-.github/        CI deploy workflow
+n8n/            4 боевых воркфлоу (экспорт JSON) + вынесенная логика нод
+  wf1_*.json      раздача тестов
+  wf2_*.json      обработка ответов
+  wf3_*.json      напоминания
+  wf4_*.json      пересдача / вторая попытка
+  *.js            логика Code-нод, вынесенная в отдельные модули
+  *.test.js       юнит-тесты этой логики
+dashboard/      приложение FastAPI: main.py, access.py (ролевой доступ), интерфейс
+tests/          тесты на Python: аутентификация, скоупы, кэш доступов
+tools/          resume_stuck.py, восстановление прерванных аттестаций
+.github/        воркфлоу деплоя в CI
 ```
 
-Secrets, service accounts, and data are excluded by design, see "Running this" below.
+Секреты, сервисные аккаунты и данные исключены намеренно, см. раздел «Запуск» ниже.
 
-## Stack & key decisions
+## Стек и ключевые решения
 
-- **n8n for orchestration.** Assessment workflows change monthly (new tests, new team configurations). Visual workflows mean a non-developer, a trainer, can trace the logic and adjust schedules without touching code, so the system doesn't depend on my availability. In practice this cut both ways: the same UI-editability let production drift ahead of git, see "What I'd do differently".
-- **Code-node logic extracted into testable modules.** n8n Code-nodes are convenient but untestable in place, so their logic lives in standalone `.js` files with unit tests (question sampling, multi-correct answers, start validation, data preparation) and is mirrored into the workflows. This is also my general rule for AI-assisted development: I own the architecture, reviews, tests and deployment, and delegate routine generation; anything generated gets isolated into a unit-testable module before it ships.
-- **FastAPI dashboard with role-based access.** Three scope levels: admins (trainers and the HR department head) see everything; division heads see all teams in their division (implementation, support, etc.); team leads see their own team only. Employees don't use the dashboard at all, their entire interface is the bot. Scopes are enforced server-side (`access.py`) with an access cache; covered by dedicated tests (auth, scopes, cache invalidation).
-- **Data layer: Google Sheets -> Supabase (Postgres).** The first version deliberately stored tests and results in Google Sheets so that trainers could author and edit content with zero custom tooling. At 200 users running assessments in parallel, the Sheets API quota (60 requests/minute) became a hard ceiling; I made the case for migration with load data and moved storage fully to self-hosted Supabase (Postgres). Sheets were retired entirely; test content is currently updated through database migrations, an authoring UI for trainers is the known trade-off of that decision and the next planned step.
-- **Redis for in-flight assessment state.** Each user's progress through a running test (current question, answers so far, timing) lives in Redis, separate from Postgres: fast per-message reads/writes during an assessment, durable results written to Postgres on completion. This split is also what makes interrupted assessments recoverable (`tools/resume_stuck.py`), the in-flight state survives workflow restarts.
-- **Failure recovery.** Assessments interrupted mid-run (messenger hiccups, restarts) resume from their Redis state via `tools/resume_stuck.py` instead of the user starting over or a trainer intervening.
-- **CI deploy** via GitHub Actions to a corporate server, where services run as isolated Docker containers. The deploy SSH key carries a forced command, it can do exactly one thing; the deploy script health-checks the service and halts with logs on failure.
+- **n8n для оркестрации.** Сценарии аттестации меняются ежемесячно: новые тесты, новые конфигурации команд. Визуальные воркфлоу означают, что тренер, не разработчик, может проследить логику и поправить расписание, не трогая код, — система не зависит от моей доступности. На практике это сработало в обе стороны: та же правка через интерфейс позволила боевой версии уехать вперёд относительно git, см. «Что сделал бы иначе».
+- **Логика Code-нод вынесена в тестируемые модули.** Code-ноды в n8n удобны, но на месте их не протестировать, поэтому их логика живёт в отдельных файлах `.js` с юнит-тестами (отбор вопросов, несколько верных ответов, валидация старта, подготовка данных) и зеркалится в воркфлоу. Это же моё общее правило для разработки с ИИ: архитектура, ревью, тесты и деплой остаются за мной, рутинная генерация делегируется, а всё сгенерированное изолируется в юнит-тестируемый модуль до того, как попадёт в прод.
+- **Дашборд на FastAPI с ролевым доступом.** Три уровня видимости: администраторы (тренеры и руководитель HR) видят всё; руководители направлений видят все команды своего направления (внедрение, поддержка и так далее); тимлиды видят только свою команду. Сотрудники дашбордом не пользуются вовсе, весь их интерфейс — бот. Скоупы проверяются на сервере (`access.py`) с кэшем доступов и покрыты отдельными тестами: аутентификация, скоупы, инвалидация кэша.
+- **Хранилище: Google Sheets → Supabase (Postgres).** Первая версия намеренно хранила тесты и результаты в Google Sheets, чтобы тренеры писали и правили содержание без всякой кастомной обвязки. На 200 пользователях, проходящих аттестацию параллельно, квота Sheets API (60 запросов в минуту) стала жёстким потолком; я обосновал миграцию данными о нагрузке и перенёс хранение целиком в self-hosted Supabase (Postgres). От Sheets отказались полностью; содержание тестов сейчас обновляется через миграции базы, а интерфейс редактирования для тренеров — известный размен этого решения и следующий запланированный шаг.
+- **Redis для состояния идущей аттестации.** Прогресс каждого пользователя по запущенному тесту (текущий вопрос, уже данные ответы, тайминг) живёт в Redis, отдельно от Postgres: быстрые чтение и запись на каждое сообщение во время аттестации, надёжные результаты пишутся в Postgres по завершении. Это разделение и делает прерванные аттестации восстановимыми (`tools/resume_stuck.py`) — состояние переживает перезапуск воркфлоу.
+- **Восстановление после сбоев.** Аттестации, прерванные на середине (сбой мессенджера, перезапуск), продолжаются из состояния в Redis через `tools/resume_stuck.py`, вместо того чтобы пользователь начинал заново или вмешивался тренер.
+- **Деплой через CI** на корпоративный сервер, где сервисы работают изолированными Docker-контейнерами. SSH-ключ деплоя идёт с forced command и умеет ровно одно действие; скрипт деплоя проверяет здоровье сервиса и останавливается с логами при сбое.
 
-## Results
+## Результаты
 
-- Assessment frequency: 2×/year -> monthly (6×).
-- Trainer time per cycle: three trainers × 2 months at ~80% load -> near zero.
-- About 860K RUB a year saved (10 person-months of manual work).
+- Частота аттестации: 2 раза в год → ежемесячно (в 6 раз).
+- Время тренеров на цикл: трое тренеров × 2 месяца при загрузке около 80% → почти ноль.
+- Экономия около 860 тыс. ₽ в год (10 человеко-месяцев ручной работы).
 
-## What I'd do differently
+## Что сделал бы иначе
 
-- Start with Postgres and a thin editing UI instead of using Google Sheets as a database. Sheets bought authoring simplicity for non-technical staff, but at 200 parallel users the API quota (60 req/min) became a hard ceiling and forced a mid-flight storage migration. The lesson: "simple for editors" and "the storage layer" are two different problems, solving both with one tool coupled them.
-- Pair the migration with an admin panel from day one. Retiring Sheets fixed the load problem but regressed authoring: test content is now updated through database migrations, i.e. through me, recreating exactly the kind of person-dependency this system was built to remove. Next step is a CRUD layer over the same Postgres, most likely off-the-shelf (NocoDB gives trainers a spreadsheet-like UI they already know; Directus/Baserow are the same class) rather than hand-rolled.
-- Treat n8n as transport, not as the application. Logic accreted inside workflow JSON (~1,000 lines across Code nodes, answer-checking duplicated in four places, 123 `$('Node name')` references that break silently on rename); UI edits let production drift ahead of git; deploys were a manual ritual with no staging; and a community node sits in the critical path, unpinned, with unverified webhook signature validation. What n8n genuinely provides, cron, retries, execution history, has cheap equivalents in the stack already running on the same host (systemd timers / pg_cron, a FastAPI webhook route, an events table). The path I'd take: first compress each workflow to trigger -> HTTP call -> done (WF2: 43 nodes -> ~4), moving all logic into git under tests and CI. After that, dropping n8n entirely becomes a one-evening, fully reversible decision instead of a rewrite, and while it stays, its retries and execution history come free.
+- Начал бы с Postgres и тонкого интерфейса редактирования вместо Google Sheets в роли базы. Sheets дали простоту работы с содержанием для нетехнических сотрудников, но на 200 параллельных пользователях квота API (60 запросов в минуту) стала жёстким потолком и вынудила менять хранилище на ходу. Урок: «просто для редакторов» и «слой хранения» — две разные задачи, и решение обеих одним инструментом связало их вместе.
+- Делал бы миграцию сразу с админкой. Отказ от Sheets снял проблему нагрузки, но откатил назад работу с содержанием: тесты теперь обновляются через миграции базы, то есть через меня, — ровно та зависимость от человека, ради устранения которой система и строилась. Следующий шаг — CRUD-слой поверх того же Postgres, скорее всего готовый (NocoDB даёт тренерам привычный табличный интерфейс; Directus и Baserow того же класса), а не самописный.
+- Относился бы к n8n как к транспорту, а не как к приложению. Логика наросла внутри JSON воркфлоу (около 1 000 строк по Code-нодам, проверка ответов продублирована в четырёх местах, 123 ссылки вида `$('Имя ноды')`, которые молча ломаются при переименовании); правки через интерфейс позволили боевой версии уехать вперёд относительно git; деплой был ручным ритуалом без стенда; а в критическом пути сидит community-нода без закреплённой версии и с непроверенной валидацией подписи вебхука. То, что n8n действительно даёт, — крон, ретраи, история запусков — имеет дешёвые эквиваленты в стеке, уже работающем на том же хосте (таймеры systemd или pg_cron, вебхук-маршрут на FastAPI, таблица событий). Путь, который я бы выбрал: сначала сжать каждый воркфлоу до «триггер → HTTP-вызов → готово» (WF2: 43 ноды → около 4), перенеся всю логику в git под тесты и CI. После этого полный отказ от n8n становится решением на один вечер и полностью обратимым, а не переписыванием, и пока он остаётся, его ретраи и история запусков достаются бесплатно.
 
-## Running this
+## Запуск
 
-This repository is a portfolio snapshot of an internal production system. It is not runnable outside the corporate environment: secrets, service accounts, messenger credentials, and data stores are excluded by design. The workflows, extracted logic, tests, and dashboard code are provided to show structure and engineering decisions, not as a deployable product.
+Этот репозиторий — портфолио-снимок внутренней боевой системы. Вне корпоративного контура он не запускается: секреты, сервисные аккаунты, доступы к мессенджеру и хранилища исключены намеренно. Воркфлоу, вынесенная логика, тесты и код дашборда приведены, чтобы показать структуру и инженерные решения, а не как готовый к развёртыванию продукт.
